@@ -10,12 +10,13 @@ HIT_DISTANCE = 100
 
 class Game(threading.Thread):
 
-    def __init__(self, players: [Player], udp_socket: socket.socket):
+    def __init__(self, server, players: [Player], udp_socket: socket.socket):
         threading.Thread.__init__(self)
         self._players = [p for p in players]
         self._threads = []
         self._udp_socket = udp_socket
         self._killed = False
+        self._server = server
 
     def run(self) -> None:
         self.start_game()
@@ -73,12 +74,11 @@ class Game(threading.Thread):
                     t = time.time()
                     curr_player.get_tcp_socket().send(b'T;')
                     curr_player.get_tcp_socket().recv(1)
-                    print("The ping:", time.time() - t)
+                    print(curr_player.get_name(), "The ping:", time.time() - t)
                 except Exception as e:
                     self._players.remove(curr_player)
                     # TODO - send all players a sad message
-                    import tcpThreadingServer
-                    tcpThreadingServer.restart_match(self)
+                    self._server.restart_match(self)
                 time.sleep(0.3)
 
     def send_to_all(self, data: str):
