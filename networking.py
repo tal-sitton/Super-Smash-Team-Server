@@ -2,29 +2,26 @@ import socket
 
 LOST_CONNECTION_MSG = "LOST CONNECTION"
 
+BUFFER_SIZE = 1024
 
-def send_msg(client_socket: socket.socket, msg: str, name: str = "lo!"):
+
+def send_msg(udp_socket: socket.socket, client_addrs: (str, int), msg: str):
     """
-    formats a the message the server wants to send and sends it.
-    :param client_socket: the socket the server needs to send to
-    :param msg: the message that needs to be formatted and sent
+    Sends a message to a client
+    :param client_addrs: the address of the client
+    :param msg: the message that needs to be sent
     """
-
-    try:
-        client_socket.send((str(len(msg)).zfill(2) + msg).encode())
-    except Exception as e:
-        print(e)
+    udp_socket.sendto(msg.encode(), client_addrs)
 
 
-def recv_data(client_socket: socket.socket):
+def send_tcp_msg(client_tcp_socket: socket.socket, msg: str):
+    client_tcp_socket.send((msg + ";").encode())
+
+
+def recv_data(udp_socket: socket.socket) -> (str, (str, int)):
     """
     receives data from a client.
     :param client_socket: the socket of the client that we want to receive from
     """
-    try:
-        j = client_socket.recv(2)
-        j = int(j.decode())
-        data = client_socket.recv(j).decode()
-    except ConnectionResetError:
-        data = LOST_CONNECTION_MSG
-    return data
+    m = udp_socket.recvfrom(BUFFER_SIZE)
+    return m[0].decode(), m[1]

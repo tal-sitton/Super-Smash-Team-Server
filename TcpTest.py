@@ -14,9 +14,9 @@ MAX_IN_GROUP = 2
 currentGroup = (1, 0)  # the current group information - (number_of_group, number_of_people_in_group)
 last_msg_of_group = []  # the last msg of each group, by index=group_num-1
 
-server = socket.socket()
-server.bind((SERVER_IP, SERVER_PORT))
-server.listen()
+server_tcp = socket.socket()
+server_tcp.bind((SERVER_IP, SERVER_PORT))
+server_tcp.listen()
 
 players = []  # the connected players and their info
 
@@ -28,9 +28,9 @@ def main():
     th.start()
     while True:
         clients_sockets = [p.get_socket() for p in players]
-        rlist, wlist, xlist = select.select([server] + clients_sockets, clients_sockets, [])  # sets up a select server
+        rlist, wlist, xlist = select.select([server_tcp] + clients_sockets, clients_sockets, [])  # sets up a select server
         for current_socket in rlist:
-            if current_socket is server:
+            if current_socket is server_tcp:
                 new_client()  # receives a new client
             else:
                 handle_data(current_socket)  # receive data from an existing client
@@ -129,7 +129,7 @@ def new_client():
     """
     global currentGroup
 
-    client_socket, addr = server.accept()
+    client_socket, addr = server_tcp.accept()
     if currentGroup[1] < MAX_IN_GROUP:
         sprite_name = recv_data(client_socket)
         print(sprite_name)

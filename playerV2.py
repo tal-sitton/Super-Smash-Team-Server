@@ -34,23 +34,24 @@ class PhysicsConstants:
 
 class Player:
 
-    def __init__(self, character: str, client_socket: socket.socket, name: str):
+    def __init__(self, character: str, _client_tcp_socket: socket.socket, _client_address: (str, int), name: str):
         """
 
         :param name: the name of the player
         :type name: str
         :param character: the name of the character the player is playing
         :type character: str
-        :param client_socket: the player's client's socket
-        :type client_socket: socket.socket
-        :param group: the group the player is part of
-        :type group: int
+        :param _client_address: the player's client's address (IP,port)
+        :type _client_address: (str,int)
         """
         # self.name = name
         self._character = character
         self.START_HEIGHT = 400  # the height the player starts in
         self.MAX_JUMP_HEIGHT = self.START_HEIGHT - 200  # the max height of the player when jump, 30 units above the
-        self._client_socket = client_socket
+
+        self._client_address = _client_address
+        self._client_tcp_socket = _client_tcp_socket
+
         self._name = name
         self._actions = [(Constants.IDLE, time.time())]
         self._pos = (495, self.START_HEIGHT)
@@ -75,8 +76,11 @@ class Player:
     def get_percentage(self) -> int:
         return self._percentage
 
-    def get_socket(self) -> socket.socket:
-        return self._client_socket
+    def get_address(self) -> (str, int):
+        return self._client_address
+
+    def get_tcp_socket(self) -> socket.socket:
+        return self._client_tcp_socket
 
     def get_name(self) -> str:
         return self._name

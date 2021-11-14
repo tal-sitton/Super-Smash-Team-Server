@@ -1,3 +1,4 @@
+import sys
 import threading
 
 from networking import *
@@ -9,25 +10,33 @@ HIT_DISTANCE = 100
 
 class Game(threading.Thread):
 
-    def __init__(self, players: [Player]):
+    def __init__(self, players: [Player], udp_socket: socket.socket):
         threading.Thread.__init__(self)
         self._players = [p for p in players]
         self._threads = []
+        self._udp_socket = udp_socket
+        self._killed = False
 
     def run(self) -> None:
         self.start_game()
         print("started Game with:", self._players)
-        for i, player in enumerate(self._players):
-            th = threading.Thread(target=self.recv_msgs, args=[player.get_socket()])
+        for i in range(len(self._players)):
+            th = threading.Thread(target=self.recv_msgs, args=[self._udp_socket])
             th.start()
             self._threads.append(th)
+        th = threading.Thread(target=self.pinger)
+        th.start()
+        self._threads.append(th)
         self.update()
 
+    def recv_msgs(self, udp_socket: socket.socket):
+        while not self._killed:
+            msg, addr = recv_data(udp_socket)
+            self.handle_data(addr, msg)
+
     def update(self):
-        while True:
+        while not self._killed:
             [p.update() for p in self._players]
-            # curr_player = self._players[curr_player_index]
-            # msg = curr_player.get_fpos() + "@" + curr_player.get_sprite()
             msg = ""
             for play in self._players:
                 if play.punched()[0]:
@@ -38,64 +47,54 @@ class Game(threading.Thread):
 
             time.sleep(0.05)
 
-    def recv_msgs(self, player_socket: socket.socket):
-        while True:
-            msg = recv_data(player_socket)
-            self.handle_data(msg, player_socket)
+    def handle_data(self, player_addr: (str, int), data: str):
+        curr_player = [p for p in self._players if p.get_address() == player_addr][0]
+        if data == Constants.JUMP:
+            curr_player.set_action(Constants.JUMP)
+        elif data == Constants.MOVE_RIGHT:
+            curr_player.move(False)
+        elif data == Constants.MOVE_LEFT:
+            curr_player.move(True)
+        elif data == Constants.RELEASED:
+            curr_player.stopped_moving()
+        elif data == Constants.A:
+            curr_player.set_action(Constants.A_PUNCH)
 
-    def handle_data(self, data: str, player_socket: socket.socket):
-        need_to_continue, curr_player = self.check_disconnection(player_socket, data)
-        if need_to_continue:
-            if data == Constants.JUMP:
-                curr_player.set_action(Constants.JUMP)
-            elif data == Constants.MOVE_RIGHT:
-                curr_player.move(False)
-            elif data == Constants.MOVE_LEFT:
-                curr_player.move(True)
-            elif data == Constants.RELEASED:
-                curr_player.stopped_moving()
-            elif data == Constants.A:
-                curr_player.set_action(Constants.A_PUNCH)
-
-            elif data == "*":  # TODO - remove!
-                print(curr_player.get_fpos())
-                curr_player.reset()
-            else:
-                print(f"who? {data}")
-
-    def check_disconnection(self, client_socket: socket.socket, data: str) -> (bool, Player):
-        curr_player = [p for p in self._players if p.get_socket() == client_socket][0]
-        if data == '':
-            print("connection Disconnected")
-            self._players.remove(curr_player)
-            client_socket.close()
-            return False, curr_player
-
+        elif data == "*":  # TODO - remove!
+            print(curr_player.get_fpos())
+            curr_player.reset()
         else:
-            if data == LOST_CONNECTION_MSG:
-                self.send_to_all(data)
-                print(data)
-                # print("connection Disconnected")
-                self._players.remove(curr_player)
-                client_socket.close()
-                return False, curr_player
+            print(f"who? {data}")
 
-        return True, curr_player
+    def pinger(self):
+        while not self._killed:
+            for curr_player in self._players:
+                try:
+                    t = time.time()
+                    curr_player.get_tcp_socket().send(b'T;')
+                    curr_player.get_tcp_socket().recv(1)
+                    print("The ping:", time.time() - t)
+                except Exception as e:
+                    self._players.remove(curr_player)
+                    # TODO - send all players a sad message
+                    import tcpThreadingServer
+                    tcpThreadingServer.restart_match(self)
+                time.sleep(0.3)
 
     def send_to_all(self, data: str):
         for p in self._players:
-            send_msg(p.get_socket(), data, p.get_name())
+            send_msg(self._udp_socket, p.get_address(), data)
 
     def start_game(self):
         for i, curr_player in enumerate(self._players):
             msg = str(i) + ',' + str(len(self._players))
-            send_msg(curr_player.get_socket(), msg, curr_player.get_name())
+            send_tcp_msg(curr_player.get_tcp_socket(), msg)
             sprites = ""
             for p in self._players:
                 if p is not curr_player:
                     sprites += p.get_character() + "&" + p.get_name() + ","
             sprites = sprites[0:len(sprites) - 1:]
-            send_msg(curr_player.get_socket(), sprites, curr_player.get_name())
+            send_tcp_msg(curr_player.get_tcp_socket(), sprites)
 
     def check_collider(self, play: Player):
         for curr_player in self._players:
@@ -106,3 +105,10 @@ class Game(threading.Thread):
             if abs(distance) < HIT_DISTANCE and abs(distance) < 100:
                 curr_player.hit(play.punched()[1], bool(Xdistance > 0))
         play.reset_punch()
+
+    def get_players(self):
+        return self._players
+
+    def kill(self):
+        self._killed = True
+        sys.exit()
