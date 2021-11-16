@@ -46,7 +46,7 @@ class Player:
         """
         # self.name = name
         self._character = character
-        self.START_HEIGHT = 400  # the height the player starts in
+        self.START_HEIGHT = 300  # the height the player starts in
         self.MAX_JUMP_HEIGHT = self.START_HEIGHT - 200  # the max height of the player when jump, 30 units above the
 
         self._client_address = _client_address
