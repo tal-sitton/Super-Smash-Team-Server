@@ -26,7 +26,7 @@ class Constants:
     # FIRST_PLATFORM = ((190, 340), 120)
     PLATFORM_SIZE = 190
     PLATFORMS_POSITIONS = [((545, 545 + PLATFORM_SIZE), 60), ((165, 165 + PLATFORM_SIZE), 140),
-                           ((820, 820 + PLATFORM_SIZE), 140), ((165, 165 + PLATFORM_SIZE), 200), ((54, 1090), 300)]
+                           ((820, 820 + PLATFORM_SIZE), 140), ((54, 1090), 300)]
     BOARDERS_Y = [-DEATH_DISTANCE, SCREEN_SIZE[1] + DEATH_DISTANCE]
     BOARDERS_X = [-DEATH_DISTANCE, SCREEN_SIZE[0] + DEATH_DISTANCE]
 
@@ -49,7 +49,6 @@ def get_wanted_height(need_below, position):
                 platform[0][0] <= position[0] <= platform[0][1] and closest[1] > platform[1] - position[1]:
             closest = [platform, platform[1] - position[1]]
         elif need_below and position[1] < platform[1] and platform[0][0] < position[0] < platform[0][1]:
-            print("YAY")
             closest = [platform, platform[1] - position[1]]
     return closest[0][1]
 
@@ -298,10 +297,9 @@ class Player:
         if not self.is_action_active([Constants.FALL, Constants.JUMP]) and self._pos[1] > wanted_height:
             self._pos = (self._pos[0], wanted_height)
 
-        if abs(self._pos[1] + 5 - get_wanted_height(self._need_below, (self._pos[0], self._pos[1] - 5))) > 2:
+        if self._need_below and abs(
+                self._pos[1] + 5 - get_wanted_height(self._need_below, (self._pos[0], self._pos[1] - 5))) > 2:
             self._need_below = False
-        else:
-            print("OK")
 
         if not Constants.BOARDERS_X[0] < self._pos[0] < Constants.BOARDERS_X[1] or not Constants.BOARDERS_Y[0] < \
                                                                                        self._pos[1] < \
