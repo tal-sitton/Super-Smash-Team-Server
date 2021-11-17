@@ -60,10 +60,12 @@ class Game(threading.Thread):
             curr_player.stopped_moving()
         elif data == Constants.A:
             curr_player.set_action(Constants.A_PUNCH)
+        elif data == Constants.MOVE_DOWN:
+            curr_player.set_action(Constants.MOVE_DOWN)
 
-        elif data == "*":  # TODO - remove!
+        elif data == "*" or data == '?':  # TODO - remove!
             print(curr_player.get_fpos())
-            curr_player.reset()
+            # curr_player.reset()
         else:
             print(f"who? {data}")
 
@@ -74,7 +76,7 @@ class Game(threading.Thread):
                     t = time.time()
                     curr_player.get_tcp_socket().send(b'T;')
                     curr_player.get_tcp_socket().recv(1)
-                    print(curr_player.get_name(), "The ping:", time.time() - t)
+                    ping = time.time() - t
                 except Exception as e:
                     self._players.remove(curr_player)
                     # TODO - send all players a sad message

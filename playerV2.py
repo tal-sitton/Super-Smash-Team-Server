@@ -8,28 +8,49 @@ class Constants:
     JUMP = "Jump"
     FALL = "Fall"
     IDLE = "Idle"
-    MOVE_RIGHT = "mr"
-    MOVE_LEFT = "ml"
-    MOVE_SPRITE = "Walk"
-    RELEASED = "rel"
     BEEN_HIT = "Hurt"
     A_PUNCH = "A_PUN"
     A = "A_"
     A_AIR = "AAir"
+    MOVE_SPRITE = "Walk"
+    MOVE_RIGHT = "mr"
+    MOVE_LEFT = "ml"
+    MOVE_DOWN = "down"
+    RELEASED = "rel"
+    SCREEN_SIZE = [1280, 720]
+    DEATH_DISTANCE = 200
     MOVING_DISTANCE = 7
     GROUND_UNMOVABLE = [A_PUNCH]
     FULL_UNMOVABLE = [BEEN_HIT]
     JUMP_PUNCH_RATE = 0.050  # in seconds
+    # FIRST_PLATFORM = ((190, 340), 120)
+    PLATFORM_SIZE = 190
+    PLATFORMS_POSITIONS = [((545, 545 + PLATFORM_SIZE), 60), ((165, 165 + PLATFORM_SIZE), 140),
+                           ((820, 820 + PLATFORM_SIZE), 140), ((54, 1090), 300)]
+    BOARDERS_Y = [-DEATH_DISTANCE, SCREEN_SIZE[1] + DEATH_DISTANCE]
+    BOARDERS_X = [-DEATH_DISTANCE, SCREEN_SIZE[0] + DEATH_DISTANCE]
 
 
 class PhysicsConstants:
-    d = 100  # distance between start height and maximum target height in pixels
+    # d = 100  # distance between start height and maximum target height in pixels
+    d = 170  # distance between start height and maximum target height in pixels
     vf = 0  # final velocity
     t = 1.5  # time to top
     vi = get_vi(vf=0, d=d, t=t)  # initial jump velocity
     ag = -get_a(vi=vi, vf=vf, d=d, t=t)  # gravity
     hit_vi = 50  # initial hit velocity
     hit_a = get_a(vi=-20, vf=0, t=0.5)  # the acceleration of the player when hit
+
+
+def get_wanted_height(need_below, position):
+    closest = [Constants.PLATFORMS_POSITIONS[len(Constants.PLATFORMS_POSITIONS) - 1], 99999]
+    for platform in Constants.PLATFORMS_POSITIONS:
+        if not need_below and position[1] <= platform[1] and \
+                platform[0][0] <= position[0] <= platform[0][1] and closest[1] > platform[1] - position[1]:
+            closest = [platform, platform[1] - position[1]]
+        elif need_below and position[1] < platform[1] and platform[0][0] < position[0] < platform[0][1]:
+            closest = [platform, platform[1] - position[1]]
+    return closest[0][1]
 
 
 class Player:
@@ -46,7 +67,7 @@ class Player:
         """
         # self.name = name
         self._character = character
-        self.START_HEIGHT = 400  # the height the player starts in
+        self.START_HEIGHT = 300  # the height the player starts in
         self.MAX_JUMP_HEIGHT = self.START_HEIGHT - 200  # the max height of the player when jump, 30 units above the
 
         self._client_address = _client_address
@@ -64,6 +85,7 @@ class Player:
         self._hit_side_multiplier = 1
         self._temp_vi = PhysicsConstants.vi
         self._temp_t = -1
+        self._need_below = False
 
     def reset(self):
         self._pos = (495, self.START_HEIGHT)
@@ -101,10 +123,7 @@ class Player:
         self._punched = (False, 0)
 
     def hit(self, damage: int, is_from_left: bool):
-        print(damage)
-        print(self._percentage)
         self._percentage += damage
-        print(self._percentage)
         self._sprite = Constants.BEEN_HIT
         self._hit_side_multiplier = 1 if is_from_left else -1
         self._actions = [(Constants.BEEN_HIT, time.time())]
@@ -141,7 +160,7 @@ class Player:
 
     def get_factions(self) -> str:
         """
-        returns a the formatted factions
+        returns a the formatted actions
         """
         return ','.join([action[0] for action in self._actions])
 
@@ -154,16 +173,23 @@ class Player:
                 Constants.A_PUNCH):
             self.remove_action_by_name(Constants.IDLE)
             self._actions.insert(0, (action, time.time()))
-            print(f"inserted {action} to self._actions ", self._actions)
             if self.is_action_active([Constants.JUMP]) or (
-                    self.is_action_active([Constants.FALL]) and self._pos[1] < self.START_HEIGHT - 10):
+                    self.is_action_active([Constants.FALL]) and self._pos[1] < get_wanted_height(self._need_below,
+                                                                                                 self._pos) - 10):
                 self._sprite = Constants.A_AIR
                 self._punched = (True, 5)
-                print("air")
             else:
                 self._sprite = Constants.A
                 self._punched = (True, 2)
-                print("A", self._sprite)
+        elif action == Constants.FALL:
+            self.remove_action_by_name(Constants.IDLE)
+            self._actions.insert(0, (action, time.time()))
+            self._temp_t = -1
+            self._temp_vi = 0
+            if self._sprite != Constants.A_AIR:
+                self._sprite = Constants.FALL
+        elif action == Constants.MOVE_DOWN:
+            self._need_below = True
 
     def can_move(self, to_left: bool):
         if to_left:
@@ -200,7 +226,7 @@ class Player:
             self._actions = [(Constants.IDLE, time.time())]
 
     def update(self):
-        stopped_falling = True
+        was_falling = self.is_action_active(Constants.FALL)
         if self.is_action_active(Constants.JUMP):
             if self._temp_t == -1:
                 self._temp_t = self.get_action_by_name(Constants.JUMP)[1]
@@ -208,15 +234,9 @@ class Player:
             d = get_d(vi=self._temp_vi, t=deltaT, a=PhysicsConstants.ag)
             self._temp_vi = get_vf(vi=self._temp_vi, t=deltaT, a=PhysicsConstants.ag)
             if self._temp_vi >= 0:
-                # print("VI", self._temp_vi)
-                # print("D", d)
-                print("T", deltaT)
-                # self._pos = (self._pos[0], int(self.START_HEIGHT - d))
                 self._pos = (self._pos[0], int(self._pos[1] - d))
                 self._temp_t = time.time()
             else:
-                print("AG", PhysicsConstants.ag)
-                # self._temp_vi = PhysicsConstants.vi
                 self._temp_t = -1
                 self._temp_vi = 0
                 self.remove_action_by_name(Constants.JUMP)
@@ -229,10 +249,9 @@ class Player:
             deltaT = time.time() - self._temp_t
             d = get_d(vi=self._temp_vi, t=deltaT, a=PhysicsConstants.ag * 2)
             self._temp_vi = get_vf(vi=self._temp_vi, t=deltaT, a=PhysicsConstants.ag * 2)
-            if abs(self._pos[1] - d) < self.START_HEIGHT:
+            if self._pos[1] - d < get_wanted_height(self._need_below, self._pos):
                 self._pos = (self._pos[0], int(self._pos[1] - d))
                 self._temp_t = time.time()
-                stopped_falling = False
             else:
                 self._temp_vi = PhysicsConstants.vi
                 self.remove_action_by_name(Constants.FALL)
@@ -244,15 +263,11 @@ class Player:
 
         if self.is_action_active(Constants.A_PUNCH):
             if time.time() > [action for action in self._actions if action[0] == Constants.A_PUNCH][0][1] + 0.55:
-                print(self._actions)
                 self.remove_action_by_name(Constants.A_PUNCH)
                 if not self._actions:
                     self._actions = [(Constants.IDLE, time.time())]
                     self._sprite = Constants.IDLE
                     self._next_time_to_punch = time.time() + Constants.JUMP_PUNCH_RATE
-                else:
-                    print(self._actions)
-                    print(self._sprite)
 
         if self.is_action_active(Constants.BEEN_HIT):
             if self._temp_t == -1:
@@ -261,25 +276,32 @@ class Player:
             Xd = get_d(vi=self._temp_hit_vi + self._percentage, t=deltaT, a=PhysicsConstants.hit_a)
             self._temp_hit_vi = get_vf(vi=self._temp_hit_vi + self._percentage / 2, t=deltaT, a=PhysicsConstants.hit_a)
 
-            Yd = get_d(vi=self._temp_vi * (self._percentage / 50), t=deltaT, a=PhysicsConstants.ag)
+            Yd = get_d(vi=self._temp_vi * (self._percentage / 20), t=deltaT, a=PhysicsConstants.ag)
             self._temp_vi = get_vf(vi=self._temp_vi + (self._percentage / 50), t=deltaT, a=PhysicsConstants.ag)
             Yd = int(self._pos[1] - Yd) if Yd > 0 else int(self._pos[1] - abs(Yd) / 100)
+
             if Xd > 0:
                 Xd *= self._hit_side_multiplier
-                # self._pos = (int(self._pos[0] + d), self._pos[1])
                 self._pos = (int(self._pos[0] + Xd), Yd)
             else:
-                self._temp_t = -1
-                self._temp_vi = 0
                 self.remove_action_by_name(Constants.BEEN_HIT)
-                self._actions.append((Constants.FALL, time.time()))
-                self._sprite = Constants.FALL
-                print("oh ive been hit")
+                self.set_action(Constants.FALL)
 
-        if not self.is_action_active([Constants.FALL, Constants.JUMP]) and self._pos[1] < self.START_HEIGHT:
-            if stopped_falling:
+        wanted_height = get_wanted_height(self._need_below, self._pos)
+        if not self.is_action_active([Constants.FALL, Constants.JUMP, Constants.BEEN_HIT]) and self._pos[
+            1] < wanted_height:
+            if not was_falling:
                 self.set_action(Constants.FALL)
             else:
-                self._pos = (self._pos[0], self.START_HEIGHT)
-        if not self.is_action_active([Constants.FALL, Constants.JUMP]) and self._pos[1] > self.START_HEIGHT:
-            self._pos = (self._pos[0], self.START_HEIGHT)
+                self._pos = (self._pos[0], wanted_height)
+        if not self.is_action_active([Constants.FALL, Constants.JUMP]) and self._pos[1] > wanted_height:
+            self._pos = (self._pos[0], wanted_height)
+
+        if self._need_below and abs(
+                self._pos[1] + 5 - get_wanted_height(self._need_below, (self._pos[0], self._pos[1] - 5))) > 2:
+            self._need_below = False
+
+        if not Constants.BOARDERS_X[0] < self._pos[0] < Constants.BOARDERS_X[1] or not Constants.BOARDERS_Y[0] < \
+                                                                                       self._pos[1] < \
+                                                                                       Constants.BOARDERS_Y[1]:
+            print("DIE")
