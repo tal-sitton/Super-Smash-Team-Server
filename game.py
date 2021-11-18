@@ -10,11 +10,14 @@ HIT_DISTANCE = 100
 
 class Game(threading.Thread):
 
-    def __init__(self, server, players: [Player], udp_socket: socket.socket):
+    def __init__(self, server, players: [Player], port: int):
+        print(port)
         threading.Thread.__init__(self)
         self._players = [p for p in players]
         self._threads = []
-        self._udp_socket = udp_socket
+        print("port:", port)
+        self._udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._udp_socket.bind(("0.0.0.0", port))
         self._killed = False
         self._server = server
 
@@ -94,7 +97,7 @@ class Game(threading.Thread):
             sprites = ""
             for p in self._players:
                 if p is not curr_player:
-                    sprites += p.get_character() + "&" + p.get_name() + ","
+                    sprites += p.get_character() + "&&&" + p.get_name() + ",,,"
             sprites = sprites[0:len(sprites) - 1:]
             send_tcp_msg(curr_player.get_tcp_socket(), sprites)
 
