@@ -25,3 +25,15 @@ def recv_data(udp_socket: socket.socket) -> (str, (str, int)):
     """
     m = udp_socket.recvfrom(BUFFER_SIZE)
     return m[0].decode(), m[1]
+
+
+def check_port(port):
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.bind(('0.0.0.0', port))
+        s.close()
+        return True
+    except:
+        s.close()
+        return False
