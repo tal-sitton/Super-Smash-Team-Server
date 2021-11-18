@@ -11,11 +11,9 @@ HIT_DISTANCE = 100
 class Game(threading.Thread):
 
     def __init__(self, server, players: [Player], port: int):
-        print(port)
         threading.Thread.__init__(self)
         self._players = [p for p in players]
         self._threads = []
-        print("port:", port)
         self._udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._udp_socket.bind(("0.0.0.0", port))
         self._killed = False
