@@ -7,7 +7,7 @@ from playerV2 import Player
 SERVER_IP = "0.0.0.0"
 SERVER_TCP_PORT = 2212
 LOST_CONNECTION_MSG = "LOST CONNECTION"
-MAX_IN_GROUP = 1
+MAX_IN_GROUP = 2
 BUFFER_SIZE = 1024
 
 global server_udp

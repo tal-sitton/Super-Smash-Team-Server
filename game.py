@@ -41,9 +41,15 @@ class Game(threading.Thread):
             [p.update() for p in self._players]
             msg = ""
             for play in self._players:
+                if not play.is_alive() and play.has_sent_message_of_death():
+                    msg += "&"
+                    continue
                 if play.punched()[0]:
                     self.check_collider(play)
                 msg += play.get_fpos() + "@" + play.get_sprite() + "%" + str(play.get_percentage()) + "&"
+                if not play.is_alive() and not play.has_sent_message_of_death():
+                    msg = msg[0:len(msg) - 1:1] + "@" + str(play.is_alive()) + "&"
+                    play.death_message_has_been_sent()
             msg = msg[0:len(msg) - 1:]
             self.send_to_all(msg)
 
