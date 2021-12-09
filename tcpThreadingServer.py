@@ -35,18 +35,6 @@ class Server:
         new_player = Player(sprite_name, client_tcp, (client_ip, int(client_udp_port)), player_name)
         self.matchmaking(new_player)
 
-    def reset_player(self, p: Player) -> Player:
-        new_p = Player(p.get_character(), p.get_tcp_socket(), p.get_address(), p.get_name())
-        del p
-        return new_p
-
-    def restart_match(self, match: game.Game):
-        print("restarting match with:", match.get_players())
-        for play in match.get_players():
-            self.matchmaking(self.reset_player(play))
-        match.kill()
-        self.threads.remove(match)
-
     def matchmaking(self, new_player: Player):
         print(f"MATCHMAKING!!! with {new_player}")
         self.current_groups_players.append(new_player)
@@ -59,6 +47,22 @@ class Server:
             th.start()
             self.threads.append(th)
             self.current_groups_players.clear()
+
+    def restart_match(self, match: game.Game):
+        print("restarting match with:", match.get_players())
+        for play in match.get_players():
+            self.matchmaking(self.reset_player(play))
+        self.kill_match(match)
+
+    def reset_player(self, p: Player) -> Player:
+        new_p = Player(p.get_character(), p.get_tcp_socket(), p.get_address(), p.get_name())
+        del p
+        return new_p
+
+    def kill_match(self, match: game.Game):
+        match.kill()
+        self.threads.remove(match)
+        print("KILLED MATCH")
 
 
 if __name__ == '__main__':

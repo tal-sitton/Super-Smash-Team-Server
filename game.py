@@ -40,6 +40,7 @@ class Game(threading.Thread):
         while not self._killed:
             [p.update() for p in self._players]
             msg = ""
+            alive = []
             for play in self._players:
                 if not play.is_alive() and play.has_sent_message_of_death():
                     msg += "&"
@@ -50,10 +51,18 @@ class Game(threading.Thread):
                 if not play.is_alive() and not play.has_sent_message_of_death():
                     msg = msg[0:len(msg) - 1:1] + "@" + str(play.is_alive()) + "&"
                     play.death_message_has_been_sent()
-            msg = msg[0:len(msg) - 1:]
-            self.send_to_all(msg)
+                if play.is_alive():
+                    alive.append(play)
+            if len(alive) == 1:
+                self.sent_to_all_tcp("W" + str(self._players.index(alive[0])))
+                # todo add things to DB
+                print("DEAD")
+                self._server.kill_match(self)
+            else:
+                msg = msg[0:len(msg) - 1:]
+                self.send_to_all(msg)
 
-            time.sleep(0.05)
+                time.sleep(0.05)
 
     def handle_data(self, player_addr: (str, int), data: str):
         curr_player = [p for p in self._players if p.get_address() == player_addr][0]
@@ -72,7 +81,6 @@ class Game(threading.Thread):
 
         elif data == "*" or data == '?':  # TODO - remove!
             print(curr_player.get_fpos())
-            # curr_player.reset()
         else:
             print(f"who? {data}")
 
@@ -86,13 +94,17 @@ class Game(threading.Thread):
                     ping = time.time() - t
                 except Exception as e:
                     self._players.remove(curr_player)
-                    # TODO - send all players a sad message
-                    self._server.restart_match(self)
+                    self.sent_to_all_tcp("F")
+                    # self._server.restart_match(self)
                 time.sleep(0.3)
 
     def send_to_all(self, data: str):
         for p in self._players:
             send_msg(self._udp_socket, p.get_address(), data)
+
+    def sent_to_all_tcp(self, data):
+        for p in self._players:
+            send_tcp_msg(p.get_tcp_socket(), data)
 
     def start_game(self):
         for i, curr_player in enumerate(self._players):
