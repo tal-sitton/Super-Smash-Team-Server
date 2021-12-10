@@ -14,8 +14,8 @@ class Game(threading.Thread):
         threading.Thread.__init__(self)
         self._players = [p for p in players]
         self._threads = []
-        self._udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._udp_socket.bind(("0.0.0.0", port))
+        self._udp_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        self._udp_socket.bind(("2a10:800e:497c:0:2474:d9d9:fbcf:1b0b", port))
         self._killed = False
         self._server = server
 
@@ -34,7 +34,7 @@ class Game(threading.Thread):
     def recv_msgs(self, udp_socket: socket.socket):
         while not self._killed:
             msg, addr = recv_data(udp_socket)
-            self.handle_data(addr, msg)
+            self.handle_data((addr[0], addr[1]), msg)
 
     def update(self):
         while not self._killed:
@@ -65,6 +65,8 @@ class Game(threading.Thread):
                 time.sleep(0.05)
 
     def handle_data(self, player_addr: (str, int), data: str):
+        print("PLAYERS ADDR: ", [p.get_address() for p in self._players])
+        print("NEEDED ADDR: ", player_addr)
         curr_player = [p for p in self._players if p.get_address() == player_addr][0]
         if data == Constants.JUMP:
             curr_player.set_action(Constants.JUMP)
