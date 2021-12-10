@@ -65,8 +65,6 @@ class Game(threading.Thread):
                 time.sleep(0.05)
 
     def handle_data(self, player_addr: (str, int), data: str):
-        print("PLAYERS ADDR: ", [p.get_address() for p in self._players])
-        print("NEEDED ADDR: ", player_addr)
         curr_player = [p for p in self._players if p.get_address() == player_addr][0]
         if data == Constants.JUMP:
             curr_player.set_action(Constants.JUMP)
