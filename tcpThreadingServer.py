@@ -32,7 +32,8 @@ class Server:
         networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
         sprite_name, player_name, client_ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
 
-        new_player = Player(sprite_name, client_tcp, (client_ip, int(client_udp_port)), player_name)
+        new_player = Player(sprite_name, client_tcp, (client_ip, int(client_udp_port)), player_name,
+                            295 + 200 * len(self.current_groups_players))
         self.matchmaking(new_player)
 
     def matchmaking(self, new_player: Player):

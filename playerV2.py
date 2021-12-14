@@ -55,7 +55,8 @@ def get_wanted_height(need_below, position):
 
 class Player:
 
-    def __init__(self, character: str, _client_tcp_socket: socket.socket, _client_address: (str, int), name: str):
+    def __init__(self, character: str, _client_tcp_socket: socket.socket, _client_address: (str, int), name: str,
+                 x_pos: int):
         """
 
         :param name: the name of the player
@@ -75,7 +76,7 @@ class Player:
 
         self._name = name
         self._actions = [(Constants.IDLE, time.time())]
-        self._pos = (495, self.START_HEIGHT)
+        self._pos = (x_pos, self.START_HEIGHT)
         self._direction = "right"
         self._sprite = Constants.IDLE
         self._percentage = 1
