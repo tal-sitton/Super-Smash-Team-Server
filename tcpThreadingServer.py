@@ -4,7 +4,7 @@ import game
 import networking
 from playerV2 import Player
 
-SERVER_IP = "0.0.0.0"
+SERVER_IP = "fe80:0:0:0:c802:222f:2a01:44c6"
 SERVER_TCP_PORT = 2212
 LOST_CONNECTION_MSG = "LOST CONNECTION"
 MAX_IN_GROUP = 2
@@ -21,7 +21,7 @@ class Server:
         global server_tcp
         global server_udp
         server_tcp = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        server_tcp.bind(("2a10:800e:497c:0:2474:d9d9:fbcf:1b0b", SERVER_TCP_PORT))
+        server_tcp.bind((SERVER_IP, SERVER_TCP_PORT))
         server_tcp.listen()
         self.next_udp_port = 2221
         while True:

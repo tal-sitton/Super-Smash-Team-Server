@@ -1,3 +1,4 @@
+import ipaddress
 import sys
 import threading
 
@@ -7,6 +8,8 @@ from utils import distance_between_point
 
 HIT_DISTANCE = 100
 
+SERVER_IP = "fe80:0:0:0:c802:222f:2a01:44c6"
+
 
 class Game(threading.Thread):
 
@@ -15,7 +18,7 @@ class Game(threading.Thread):
         self._players = [p for p in players]
         self._threads = []
         self._udp_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self._udp_socket.bind(("2a10:800e:497c:0:2474:d9d9:fbcf:1b0b", port))
+        self._udp_socket.bind((SERVER_IP, port))
         self._killed = False
         self._server = server
 
@@ -65,7 +68,12 @@ class Game(threading.Thread):
                 time.sleep(0.05)
 
     def handle_data(self, player_addr: (str, int), data: str):
-        curr_player = [p for p in self._players if p.get_address() == player_addr][0]
+        print([(p.get_address()[0].split("%")[0], p.get_address()[1]) for p in self._players])
+        print(player_addr)
+        curr_player = \
+            [p for p in self._players if
+             (ipaddress.ip_address(p.get_address()[0].split("%")[0]).compressed, p.get_address()[1]) ==
+             (ipaddress.ip_address(player_addr[0]).compressed, player_addr[1])][0]
         if data == Constants.JUMP:
             curr_player.set_action(Constants.JUMP)
         elif data == Constants.MOVE_RIGHT:
