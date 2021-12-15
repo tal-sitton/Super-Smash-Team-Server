@@ -1,7 +1,10 @@
 import socket
+import threading
+import time
 
 import game
 import networking
+import pinger
 from playerV2 import Player
 
 SERVER_IP = "fe80:0:0:0:c802:222f:2a01:44c6"
@@ -24,6 +27,8 @@ class Server:
         server_tcp.bind((SERVER_IP, SERVER_TCP_PORT))
         server_tcp.listen()
         self.next_udp_port = 2221
+        th = threading.Thread(target=self.check_pings)
+        th.start()
         while True:
             self.new_client()
 
@@ -34,6 +39,7 @@ class Server:
 
         new_player = Player(sprite_name, client_tcp, (client_ip, int(client_udp_port)), player_name,
                             295 + 200 * len(self.current_groups_players))
+        pinger.Pinger(client_tcp).start()
         self.matchmaking(new_player)
 
     def matchmaking(self, new_player: Player):
@@ -48,6 +54,19 @@ class Server:
             th.start()
             self.threads.append(th)
             self.current_groups_players.clear()
+
+    def check_pings(self):
+        while True:
+            if self.current_groups_players:
+                print("check")
+                players_sockets = [play.get_tcp_socket() for play in self.current_groups_players]
+                right_pingers = [ping for ping in pinger.pingers if ping in players_sockets]
+                for ping in right_pingers:
+                    if ping.error:
+                        self.current_groups_players.remove(self.current_groups_players[players_sockets.index(ping)])
+                        print("REMOVED PLAYER: ", ping)
+                        print("current players: ", self.current_groups_players)
+            time.sleep(1)
 
     def restart_match(self, match: game.Game):
         print("restarting match with:", match.get_players())

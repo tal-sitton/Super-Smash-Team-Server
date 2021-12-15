@@ -2,6 +2,7 @@ import ipaddress
 import sys
 import threading
 
+import pinger
 from networking import *
 from playerV2 import *
 from utils import distance_between_point
@@ -29,9 +30,9 @@ class Game(threading.Thread):
             th = threading.Thread(target=self.recv_msgs, args=[self._udp_socket])
             th.start()
             self._threads.append(th)
-        th = threading.Thread(target=self.pinger)
-        th.start()
-        self._threads.append(th)
+        # th = threading.Thread(target=self.pinger)
+        # th.start()
+        # self._threads.append(th)
         self.update()
 
     def recv_msgs(self, udp_socket: socket.socket):
@@ -48,6 +49,13 @@ class Game(threading.Thread):
                 if not play.is_alive() and play.has_sent_message_of_death():
                     msg += "&"
                     continue
+
+                if pinger.is_ping_error(play.get_tcp_socket()):
+                    self._players.remove(play)
+                    self.sent_to_all_tcp("F")
+                    print("KICK EVERYONE")
+                    break
+
                 if play.punched()[0]:
                     self.check_collider(play)
                 msg += play.get_fpos() + "@" + play.get_sprite() + "%" + str(play.get_percentage()) + "&"
@@ -65,7 +73,7 @@ class Game(threading.Thread):
                 msg = msg[0:len(msg) - 1:]
                 self.send_to_all(msg)
 
-                time.sleep(0.05)
+            time.sleep(0.05)
 
     def handle_data(self, player_addr: (str, int), data: str):
         print([(p.get_address()[0].split("%")[0], p.get_address()[1]) for p in self._players])
@@ -92,19 +100,19 @@ class Game(threading.Thread):
         else:
             print(f"who? {data}")
 
-    def pinger(self):
-        while not self._killed:
-            for curr_player in self._players:
-                try:
-                    t = time.time()
-                    curr_player.get_tcp_socket().send(b'T;')
-                    curr_player.get_tcp_socket().recv(1)
-                    ping = time.time() - t
-                except Exception as e:
-                    self._players.remove(curr_player)
-                    self.sent_to_all_tcp("F")
-                    # self._server.restart_match(self)
-                time.sleep(0.3)
+    # def pinger(self):
+    #     while not self._killed:
+    #         for curr_player in self._players:
+    #             try:
+    #                 t = time.time()
+    #                 curr_player.get_tcp_socket().send(b'T;')
+    #                 curr_player.get_tcp_socket().recv(1)
+    #                 ping = time.time() - t
+    #             except Exception as e:
+    #                 self._players.remove(curr_player)
+    #                 self.sent_to_all_tcp("F")
+    #                 # self._server.restart_match(self)
+    #             time.sleep(0.3)
 
     def send_to_all(self, data: str):
         for p in self._players:
@@ -117,13 +125,13 @@ class Game(threading.Thread):
     def start_game(self):
         for i, curr_player in enumerate(self._players):
             msg = str(i) + ',' + str(len(self._players))
-            send_tcp_msg(curr_player.get_tcp_socket(), msg)
+            send_tcp_msg("I" + curr_player.get_tcp_socket(), msg)
             sprites = ""
             for p in self._players:
                 if p is not curr_player:
                     sprites += p.get_character() + "&&&" + p.get_name() + ",,,"
             sprites = sprites[0:len(sprites) - 1:]
-            send_tcp_msg(curr_player.get_tcp_socket(), sprites)
+            send_tcp_msg("II" + curr_player.get_tcp_socket(), sprites)
 
     def check_collider(self, play: Player):
         for curr_player in self._players:
