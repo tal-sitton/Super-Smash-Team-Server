@@ -21,7 +21,7 @@ class Pinger(threading.Thread):
 
     def run(self) -> None:
         print("START RUNNING")
-        self.tcp.settimeout(1)
+        self.tcp.settimeout(8)
         while self.running:
             try:
                 print("PING!")
@@ -29,10 +29,10 @@ class Pinger(threading.Thread):
                 self.tcp.send(b'T;')
                 print("sent")
                 self.tcp.recv(1)
-                ping = time.time() - t
-                print(ping)
+                ping = (time.time() - t) * 1000
+                print(ping, "ms", self.tcp)
             except Exception as e:
-                print(e)
+                print("THE E:", e)
                 self.error = True
                 self.running = False
             time.sleep(0.3)

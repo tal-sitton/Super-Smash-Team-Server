@@ -7,7 +7,7 @@ import networking
 import pinger
 from playerV2 import Player
 
-SERVER_IP = "fe80:0:0:0:c802:222f:2a01:44c6"
+SERVER_IP = "fe80:0:0:0:bc:5181:4c13:def8"
 SERVER_TCP_PORT = 2212
 LOST_CONNECTION_MSG = "LOST CONNECTION"
 MAX_IN_GROUP = 2
@@ -35,9 +35,9 @@ class Server:
     def new_client(self):
         client_tcp, addr = server_tcp.accept()
         networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
-        sprite_name, player_name, client_ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
+        sprite_name, player_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
 
-        new_player = Player(sprite_name, client_tcp, (client_ip, int(client_udp_port)), player_name,
+        new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), player_name,
                             295 + 200 * len(self.current_groups_players))
         pinger.Pinger(client_tcp).start()
         self.matchmaking(new_player)
@@ -48,23 +48,23 @@ class Server:
         print("IN THE MATCHMAKING: ", self.current_groups_players)
         if len(self.current_groups_players) == MAX_IN_GROUP:
             th = game.Game(self, self.current_groups_players, self.next_udp_port)
-            self.next_udp_port += 1
-            while not networking.check_port(self.next_udp_port):
-                self.next_udp_port += 1
             th.start()
             self.threads.append(th)
             self.current_groups_players.clear()
+
+            self.next_udp_port += 1
+            while not networking.check_port(self.next_udp_port):
+                self.next_udp_port += 1
 
     def check_pings(self):
         while True:
             if self.current_groups_players:
                 print("check")
                 players_sockets = [play.get_tcp_socket() for play in self.current_groups_players]
-                right_pingers = [ping for ping in pinger.pingers if ping in players_sockets]
-                for ping in right_pingers:
-                    if ping.error:
-                        self.current_groups_players.remove(self.current_groups_players[players_sockets.index(ping)])
-                        print("REMOVED PLAYER: ", ping)
+                for sock in players_sockets:
+                    if pinger.is_ping_error(sock):
+                        self.current_groups_players.remove(self.current_groups_players[players_sockets.index(sock)])
+                        print("REMOVED PLAYER: ", sock)
                         print("current players: ", self.current_groups_players)
             time.sleep(1)
 

@@ -9,7 +9,7 @@ from utils import distance_between_point
 
 HIT_DISTANCE = 100
 
-SERVER_IP = "fe80:0:0:0:c802:222f:2a01:44c6"
+SERVER_IP = "fe80:0:0:0:bc:5181:4c13:def8"
 
 
 class Game(threading.Thread):
@@ -38,7 +38,8 @@ class Game(threading.Thread):
     def recv_msgs(self, udp_socket: socket.socket):
         while not self._killed:
             msg, addr = recv_data(udp_socket)
-            self.handle_data((addr[0], addr[1]), msg)
+            if not self._killed:
+                self.handle_data((addr[0], addr[1]), msg)
 
     def update(self):
         while not self._killed:
@@ -51,9 +52,11 @@ class Game(threading.Thread):
                     continue
 
                 if pinger.is_ping_error(play.get_tcp_socket()):
+                    print("PING ERROR: ", )
                     self._players.remove(play)
                     self.sent_to_all_tcp("F")
                     print("KICK EVERYONE")
+                    self._server.kill_match(self)
                     break
 
                 if play.punched()[0]:
@@ -76,8 +79,8 @@ class Game(threading.Thread):
             time.sleep(0.05)
 
     def handle_data(self, player_addr: (str, int), data: str):
-        print([(p.get_address()[0].split("%")[0], p.get_address()[1]) for p in self._players])
-        print(player_addr)
+        # print([(p.get_address()[0].split("%")[0], p.get_address()[1]) for p in self._players])
+        # print(player_addr)
         curr_player = \
             [p for p in self._players if
              (ipaddress.ip_address(p.get_address()[0].split("%")[0]).compressed, p.get_address()[1]) ==
@@ -125,13 +128,13 @@ class Game(threading.Thread):
     def start_game(self):
         for i, curr_player in enumerate(self._players):
             msg = str(i) + ',' + str(len(self._players))
-            send_tcp_msg("I" + curr_player.get_tcp_socket(), msg)
+            send_tcp_msg(curr_player.get_tcp_socket(), "I" + msg)
             sprites = ""
             for p in self._players:
                 if p is not curr_player:
                     sprites += p.get_character() + "&&&" + p.get_name() + ",,,"
-            sprites = sprites[0:len(sprites) - 1:]
-            send_tcp_msg("II" + curr_player.get_tcp_socket(), sprites)
+            sprites = sprites[0:len(sprites) - 3:]
+            send_tcp_msg(curr_player.get_tcp_socket(), "S" + sprites)
 
     def check_collider(self, play: Player):
         for curr_player in self._players:
