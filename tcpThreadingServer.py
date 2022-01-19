@@ -26,6 +26,7 @@ class Server:
         server_tcp = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         server_tcp.bind((SERVER_IP, SERVER_TCP_PORT))
         server_tcp.listen()
+        print("LISTENING...")
         self.next_udp_port = 2221
         th = threading.Thread(target=self.check_pings)
         th.start()
@@ -34,6 +35,7 @@ class Server:
 
     def new_client(self):
         client_tcp, addr = server_tcp.accept()
+        print("NEW PLAYER")
         networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
         sprite_name, player_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
 
