@@ -79,8 +79,6 @@ class Game(threading.Thread):
             time.sleep(0.05)
 
     def handle_data(self, player_addr: (str, int), data: str):
-        # print([(p.get_address()[0].split("%")[0], p.get_address()[1]) for p in self._players])
-        # print(player_addr)
         curr_player = \
             [p for p in self._players if
              (ipaddress.ip_address(p.get_address()[0].split("%")[0]).compressed, p.get_address()[1]) ==
@@ -102,20 +100,6 @@ class Game(threading.Thread):
             print(curr_player.get_fpos())
         else:
             print(f"who? {data}")
-
-    # def pinger(self):
-    #     while not self._killed:
-    #         for curr_player in self._players:
-    #             try:
-    #                 t = time.time()
-    #                 curr_player.get_tcp_socket().send(b'T;')
-    #                 curr_player.get_tcp_socket().recv(1)
-    #                 ping = time.time() - t
-    #             except Exception as e:
-    #                 self._players.remove(curr_player)
-    #                 self.sent_to_all_tcp("F")
-    #                 # self._server.restart_match(self)
-    #             time.sleep(0.3)
 
     def send_to_all(self, data: str):
         for p in self._players:
