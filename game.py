@@ -30,9 +30,6 @@ class Game(threading.Thread):
             th = threading.Thread(target=self.recv_msgs, args=[self._udp_socket])
             th.start()
             self._threads.append(th)
-        # th = threading.Thread(target=self.pinger)
-        # th.start()
-        # self._threads.append(th)
         self.update()
 
     def recv_msgs(self, udp_socket: socket.socket):
