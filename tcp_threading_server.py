@@ -6,6 +6,7 @@ import game
 import networking
 import pinger
 from playerV2 import Player
+from sql_handler import SQLHandler
 
 SERVER_IP = "fe80:0:0:0:bc:5181:4c13:def8"
 SERVER_TCP_PORT = 2212
@@ -21,6 +22,7 @@ class Server:
     def __init__(self):
         self.current_groups_players = []
         self.threads = []
+        self.sqlhandler = SQLHandler()
         global server_tcp
         global server_udp
         server_tcp = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
@@ -39,6 +41,18 @@ class Server:
         networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
         sprite_name, player_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
 
+        # todo start here
+        msg = client_tcp.recv(BUFFER_SIZE).decode()
+        action, username = msg[:6], msg[6:]
+        passhash = client_tcp.recv(BUFFER_SIZE)
+        print("ACTION:", action)
+        print("USERNAME:", username)
+        print("passHash:", passhash)
+
+        if action == "SignUp":
+            self.sqlhandler.insert(username, passhash, 0, 0)
+            networking.send_tcp_msg(client_tcp, "True")
+        # todo get info of username and password from socket
         new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), player_name,
                             295 + 200 * len(self.current_groups_players))
         pinger.Pinger(client_tcp).start()
