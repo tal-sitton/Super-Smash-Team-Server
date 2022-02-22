@@ -1,7 +1,5 @@
 from math import sqrt
 
-import sql_handler
-
 
 def distance_between_point(xy1: [int, int], xy2: [int, int]):
     x1, y1 = xy1

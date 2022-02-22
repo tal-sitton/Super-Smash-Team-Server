@@ -39,22 +39,28 @@ class Server:
         client_tcp, addr = server_tcp.accept()
         print("NEW PLAYER")
         networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
-        sprite_name, player_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
+        sprite_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
 
-        # todo start here
-        msg = client_tcp.recv(BUFFER_SIZE).decode()
-        action, username = msg[:6], msg[6:]
-        passhash = client_tcp.recv(BUFFER_SIZE)
-        print("ACTION:", action)
-        print("USERNAME:", username)
-        print("passHash:", passhash)
+        right = False
+        while not right:
+            msg = client_tcp.recv(BUFFER_SIZE).decode()
+            action, username = msg[:6], msg[6:]
+            passhash = client_tcp.recv(BUFFER_SIZE)
+            print("ACTION:", action)
+            print("USERNAME:", username)
+            print("passHash:", passhash)
 
-        if action == "SignUp":
-            self.sqlhandler.insert(username, passhash, 0, 0)
-            networking.send_tcp_msg(client_tcp, "True")
-        # todo get info of username and password from socket
-        new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), player_name,
-                            295 + 200 * len(self.current_groups_players))
+            if action == "SignUp":
+                self.sqlhandler.insert(username, passhash, 0, 0)
+                right = True
+            elif action == "Submit":
+                for user in self.sqlhandler.get_data("password", ("username", username)):
+                    if passhash == user[0]:
+                        right = True
+                        break
+            networking.send_tcp_msg(client_tcp, str(right))
+        new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), username,
+                            295 + 200 * len(self.current_groups_players), 0)  # TODO add rowID
         pinger.Pinger(client_tcp).start()
         self.matchmaking(new_player)
 

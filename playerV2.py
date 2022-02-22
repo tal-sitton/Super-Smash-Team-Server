@@ -56,7 +56,7 @@ def get_wanted_height(need_below, position):
 class Player:
 
     def __init__(self, character: str, _client_tcp_socket: socket.socket, _client_address: (str, int), name: str,
-                 x_pos: int):
+                 x_pos: int, row_id: int):
         """
 
         :param name: the name of the player
@@ -75,6 +75,7 @@ class Player:
         self._client_tcp_socket = _client_tcp_socket
 
         self._name = name
+        self.row_id = row_id
         self._actions = [(Constants.IDLE, time.time())]
         self._pos = (x_pos, self.START_HEIGHT)
         self._direction = "right"
