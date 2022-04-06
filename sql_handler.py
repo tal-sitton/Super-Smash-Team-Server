@@ -40,7 +40,12 @@ class SQLHandler:
         val = (username, password, win, lose)
         self.cursor.execute(sql, val)
         self.db.commit()
-        print(self.cursor.rowcount, "record inserted.")
+
+        self.cursor.execute(f"select * from {self.table}")
+        rowcount = len(self.cursor.fetchall())
+        print(rowcount, "record inserted.")
+
+        return rowcount
 
     def create_table(self, name):
         self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {name} (username text, "

@@ -75,7 +75,7 @@ class Player:
         self._client_tcp_socket = _client_tcp_socket
 
         self._name = name
-        self.row_id = row_id
+        self._row_id = row_id
         self._actions = [(Constants.IDLE, time.time())]
         self._pos = (x_pos, self.START_HEIGHT)
         self._direction = "right"
@@ -119,6 +119,9 @@ class Player:
 
     def get_pos(self) -> (int, int):
         return self._pos
+
+    def get_rowid(self) -> int:
+        return self._row_id
 
     def punched(self):
         return self._punched
@@ -177,7 +180,7 @@ class Player:
 
     def get_factions(self) -> str:
         """
-        returns a the formatted actions
+        returns the formatted actions
         """
         return ','.join([action[0] for action in self._actions])
 
