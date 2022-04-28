@@ -3,6 +3,7 @@ import sys
 import threading
 
 import pinger
+from sql_handler import SQLHandler
 from networking import *
 from playerV2 import *
 from utils import distance_between_point
@@ -39,6 +40,7 @@ class Game(threading.Thread):
                 self.handle_data((addr[0], addr[1]), msg)
 
     def update(self):
+        sqlhandler = SQLHandler()
         while not self._killed:
             [p.update() for p in self._players]
             msg = ""
@@ -66,6 +68,11 @@ class Game(threading.Thread):
                     alive.append(play)
             if len(alive) == 1:
                 self.sent_to_all_tcp("W" + str(self._players.index(alive[0])))
+                for play in self._players:
+                    if play == alive[0]:
+                        sqlhandler.update_inc("win", "rowid", play.get_rowid())
+                    else:
+                        sqlhandler.update_inc("lose", "rowid", play.get_rowid())
                 # todo add things to DB
                 print("DEAD")
                 self._server.kill_match(self)
@@ -76,10 +83,9 @@ class Game(threading.Thread):
             time.sleep(0.05)
 
     def handle_data(self, player_addr: (str, int), data: str):
-        curr_player = \
-            [p for p in self._players if
-             (ipaddress.ip_address(p.get_address()[0].split("%")[0]).compressed, p.get_address()[1]) ==
-             (ipaddress.ip_address(player_addr[0]).compressed, player_addr[1])][0]
+        curr_player = [p for p in self._players if
+                       (ipaddress.ip_address(p.get_address()[0].split("%")[0]).compressed, p.get_address()[1]) == (
+                           ipaddress.ip_address(player_addr[0]).compressed, player_addr[1])][0]
         if data == Constants.JUMP:
             curr_player.set_action(Constants.JUMP)
         elif data == Constants.MOVE_RIGHT:

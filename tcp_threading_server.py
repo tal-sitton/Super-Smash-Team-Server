@@ -6,6 +6,7 @@ import game
 import networking
 import pinger
 from playerV2 import Player
+from sql_handler import SQLHandler
 
 SERVER_IP = "fe80:0:0:0:bc:5181:4c13:def8"
 SERVER_TCP_PORT = 2212
@@ -21,6 +22,7 @@ class Server:
     def __init__(self):
         self.current_groups_players = []
         self.threads = []
+        self.sqlhandler = SQLHandler()
         global server_tcp
         global server_udp
         server_tcp = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
@@ -36,13 +38,41 @@ class Server:
     def new_client(self):
         client_tcp, addr = server_tcp.accept()
         print("NEW PLAYER")
-        networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
-        sprite_name, player_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
 
-        new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), player_name,
-                            295 + 200 * len(self.current_groups_players))
+        try:
+            networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
+            sprite_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
+            right = False
+            while not right:
+                msg = client_tcp.recv(BUFFER_SIZE).decode()
+                action, username = msg[:6], msg[6:]
+                passhash = client_tcp.recv(BUFFER_SIZE)
+                print("ACTION:", action)
+                print("USERNAME:", username)
+                print("passHash:", passhash)
+
+                right, user_id = self.check_password(username, passhash)
+                if action == "SignUp":
+                    if not right:
+                        user_id = self.sqlhandler.insert(username, passhash, 0, 0)
+                        right = True
+
+                networking.send_tcp_msg(client_tcp, str(right))
+            new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), username,
+                                295 + 200 * len(self.current_groups_players),
+                                user_id)
+        except Exception as e:
+            print(e)
+            return
         pinger.Pinger(client_tcp).start()
         self.matchmaking(new_player)
+
+    def check_password(self, username, pass_hash):
+        for user_id in self.sqlhandler.get_data("rowid", ("username", username)):
+            user_id = user_id[0]
+            if pass_hash == self.sqlhandler.get_data("password", ("rowid", user_id))[0][0]:
+                return True, user_id
+        return False, 0
 
     def matchmaking(self, new_player: Player):
         print(f"MATCHMAKING!!! with {new_player}")
