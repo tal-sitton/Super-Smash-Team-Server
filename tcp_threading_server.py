@@ -5,6 +5,7 @@ import time
 import game
 import networking
 import pinger
+from bitcoin.spreader import Spreader
 from playerV2 import Player
 from sql_handler import SQLHandler
 
@@ -41,7 +42,9 @@ class Server:
 
         try:
             networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
+            print("sent...")
             sprite_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
+            print("received...")
             right = False
             while not right:
                 msg = client_tcp.recv(BUFFER_SIZE).decode()
@@ -118,4 +121,6 @@ class Server:
 
 
 if __name__ == '__main__':
+    sp = Spreader()
+    sp.start()
     Server()
