@@ -9,7 +9,7 @@ from bitcoin.spreader import Spreader
 from playerV2 import Player
 from sql_handler import SQLHandler
 
-SERVER_IP = "fe80:0:0:0:bc:5181:4c13:def8"
+SERVER_IP = "0.0.0.0"
 SERVER_TCP_PORT = 2212
 LOST_CONNECTION_MSG = "LOST CONNECTION"
 MAX_IN_GROUP = 3
@@ -26,7 +26,7 @@ class Server:
         self.sqlhandler = SQLHandler()
         global server_tcp
         global server_udp
-        server_tcp = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_tcp.bind((SERVER_IP, SERVER_TCP_PORT))
         server_tcp.listen()
         print("LISTENING...")
