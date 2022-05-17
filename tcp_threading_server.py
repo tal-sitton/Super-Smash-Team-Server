@@ -12,7 +12,7 @@ from sql_handler import SQLHandler
 SERVER_IP = "fe80:0:0:0:bc:5181:4c13:def8"
 SERVER_TCP_PORT = 2212
 LOST_CONNECTION_MSG = "LOST CONNECTION"
-MAX_IN_GROUP = 2
+MAX_IN_GROUP = 3
 BUFFER_SIZE = 1024
 
 global server_udp
@@ -43,7 +43,7 @@ class Server:
         try:
             networking.send_tcp_msg(client_tcp, str(self.next_udp_port))
             print("sent...")
-            sprite_name, ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
+            ip, client_udp_port = client_tcp.recv(BUFFER_SIZE).decode().split(',')
             print("received...")
             right = False
             while not right:
@@ -61,6 +61,7 @@ class Server:
                         right = True
 
                 networking.send_tcp_msg(client_tcp, str(right))
+            sprite_name = client_tcp.recv(BUFFER_SIZE).decode()
             new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), username,
                                 295 + 200 * len(self.current_groups_players),
                                 user_id)
