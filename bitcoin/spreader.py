@@ -12,7 +12,7 @@ class Spreader(threading.Thread):
     def run(self) -> None:
         super().run()
         server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_tcp.bind(("0.0.0.0", 2231))
+        server_tcp.bind(("192.168.173.18", 2231))
         server_tcp.listen()
         print("spreader listening")
         while True:

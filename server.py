@@ -9,7 +9,7 @@ from bitcoin.spreader import Spreader
 from playerV2 import Player
 from sql_handler import SQLHandler
 
-SERVER_IP = "0.0.0.0"
+SERVER_IP = "192.168.173.18"
 SERVER_TCP_PORT = 2212
 LOST_CONNECTION_MSG = "LOST CONNECTION"
 MAX_IN_GROUP = 3
@@ -47,6 +47,7 @@ class Server:
             print("received...")
             right = False
             while not right:
+                print("!right")
                 msg = client_tcp.recv(BUFFER_SIZE).decode()
                 action, username = msg[:6], msg[6:]
                 passhash = client_tcp.recv(BUFFER_SIZE)
@@ -59,12 +60,15 @@ class Server:
                     if not right:
                         user_id = self.sqlhandler.insert(username, passhash, 0, 0)
                         right = True
-
                 networking.send_tcp_msg(client_tcp, str(right))
+                print("sent right")
+            print("CORRECT1")
             sprite_name = client_tcp.recv(BUFFER_SIZE).decode()
+            print("got sprite name")
             new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), username,
                                 295 + 200 * len(self.current_groups_players),
                                 user_id)
+            print("created player")
         except Exception as e:
             print(e)
             return
@@ -95,7 +99,6 @@ class Server:
     def check_pings(self):
         while True:
             if self.current_groups_players:
-                print("check")
                 players_sockets = [play.get_tcp_socket() for play in self.current_groups_players]
                 for sock in players_sockets:
                     if pinger.is_ping_error(sock):

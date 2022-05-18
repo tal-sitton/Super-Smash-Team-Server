@@ -10,7 +10,7 @@ from utils import distance_between_point
 
 HIT_DISTANCE = 100
 
-SERVER_IP = "0.0.0.0"
+SERVER_IP = "192.168.173.18"
 
 
 class Game(threading.Thread):

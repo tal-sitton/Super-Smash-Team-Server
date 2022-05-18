@@ -24,13 +24,13 @@ class Pinger(threading.Thread):
         self.tcp.settimeout(8)
         while self.running:
             try:
-                print("PING!")
+                # print("PING!")
                 t = time.time()
                 self.tcp.send(b'T;')
-                print("sent")
+                # print("sent")
                 self.tcp.recv(1)
                 ping = (time.time() - t) * 1000
-                print(ping, "ms", self.tcp)
+                # print(ping, "ms", self.tcp)
             except Exception as e:
                 print("THE E:", e)
                 self.error = True
