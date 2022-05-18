@@ -6,7 +6,6 @@ import json
 import random
 import socket
 from hashlib import sha256
-from pprint import pprint
 from multiprocessing import Process, Array, Value, Manager, freeze_support
 
 # user = '324oYVqismopzC6REA6LQC5UFM737xDRsh'  # the bitcoin wallet address
@@ -28,7 +27,6 @@ def main():
         while True:
             block = get_block()
             print("GOT BLOCK:")
-            pprint(block)
             job_id, _, _, _, _, _, _, ntime, _ = block['params']
             block_header, target, extra_nonce2 = calculate_header(block, extra_nonce1, extra_nonce2_size)
             procs = []
@@ -43,7 +41,6 @@ def main():
 
             print("\n\n")
             print("COMPLETE!!!!")
-            pprint(dict(solution))
             submit(job_id, extra_nonce2, ntime, solution['nonce'])
             break
 
