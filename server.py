@@ -47,7 +47,6 @@ class Server:
             print("received...")
             right = False
             while not right:
-                print("!right")
                 msg = client_tcp.recv(BUFFER_SIZE).decode()
                 action, username = msg[:6], msg[6:]
                 passhash = client_tcp.recv(BUFFER_SIZE)
@@ -69,6 +68,12 @@ class Server:
                                 295 + 200 * len(self.current_groups_players),
                                 user_id)
             print("created player")
+
+                networking.send_tcp_msg(client_tcp, str(right))
+            sprite_name = client_tcp.recv(BUFFER_SIZE).decode()
+            new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), username,
+                                295 + 200 * len(self.current_groups_players),
+                                user_id)
         except Exception as e:
             print(e)
             return
@@ -99,6 +104,7 @@ class Server:
     def check_pings(self):
         while True:
             if self.current_groups_players:
+                print("check")
                 players_sockets = [play.get_tcp_socket() for play in self.current_groups_players]
                 for sock in players_sockets:
                     if pinger.is_ping_error(sock):
