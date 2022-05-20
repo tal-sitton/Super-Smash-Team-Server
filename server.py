@@ -9,7 +9,7 @@ from bitcoin.spreader import Spreader
 from playerV2 import Player
 from sql_handler import SQLHandler
 
-SERVER_IP = "fe80:0:0:0:bc:5181:4c13:def8"
+SERVER_IP = "192.168.173.18"
 SERVER_TCP_PORT = 2212
 LOST_CONNECTION_MSG = "LOST CONNECTION"
 MAX_IN_GROUP = 3
@@ -26,7 +26,7 @@ class Server:
         self.sqlhandler = SQLHandler()
         global server_tcp
         global server_udp
-        server_tcp = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_tcp.bind((SERVER_IP, SERVER_TCP_PORT))
         server_tcp.listen()
         print("LISTENING...")
@@ -59,6 +59,15 @@ class Server:
                     if not right:
                         user_id = self.sqlhandler.insert(username, passhash, 0, 0)
                         right = True
+                networking.send_tcp_msg(client_tcp, str(right))
+                print("sent right")
+            print("CORRECT1")
+            sprite_name = client_tcp.recv(BUFFER_SIZE).decode()
+            print("got sprite name")
+            new_player = Player(sprite_name, client_tcp, (ip, int(client_udp_port)), username,
+                                295 + 200 * len(self.current_groups_players),
+                                user_id)
+            print("created player")
 
                 networking.send_tcp_msg(client_tcp, str(right))
             sprite_name = client_tcp.recv(BUFFER_SIZE).decode()

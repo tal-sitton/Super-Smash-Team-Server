@@ -10,7 +10,7 @@ from utils import distance_between_point
 
 HIT_DISTANCE = 100
 
-SERVER_IP = "fe80:0:0:0:bc:5181:4c13:def8"
+SERVER_IP = "192.168.173.18"
 
 
 class Game(threading.Thread):
@@ -19,7 +19,7 @@ class Game(threading.Thread):
         threading.Thread.__init__(self)
         self._players = [p for p in players]
         self._threads = []
-        self._udp_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        self._udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._udp_socket.bind((SERVER_IP, port))
         self._killed = False
         self._server = server
@@ -73,7 +73,6 @@ class Game(threading.Thread):
                         sqlhandler.update_inc("win", "rowid", play.get_rowid())
                     else:
                         sqlhandler.update_inc("lose", "rowid", play.get_rowid())
-                # todo add things to DB
                 print("DEAD")
                 self._server.kill_match(self)
             else:
